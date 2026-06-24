@@ -25,7 +25,7 @@ class Agent():
     def predict_color(self, x, y):
         inputs = [x / 15.0, y / 15.0] # normalization to 16x16
         color = self.neural_net.update(inputs)
-        return np.clip(np.array(color), 0.0, 1.0)
+        return np.array(color)
 
     def update(self):
         # Fitness is higher when the three known pixels are predicted correctly.
@@ -54,7 +54,6 @@ class Agent():
                 color = tuple((255 * self.predict_color(x, y)).astype(int))
                 rect = interface.Rect(left + x * cell, top + y * cell, cell, cell)
                 interface.draw.rect(screen, color, rect)
-                interface.draw.rect(screen, (230, 230, 230), rect, 1)
 
         # Mark the three original training pixels with a black border.
         for (x, y), target_color in Agent.training_pixels:

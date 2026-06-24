@@ -36,11 +36,16 @@ class Genetic_algorithm():
    
     def get_genome_by_tournament(self):
         tournament_size = 4
-        combatants = np.random.choice(range(len(self.population)), tournament_size, replace = False)
-        combatants.sort()
-        fittest_genome = self.population[combatants[0]]   
+        combatant_indices = np.random.choice(
+            range(len(self.population)),
+            tournament_size,
+            replace=False
+        )
 
-        return fittest_genome
+        return max(
+            (self.population[i] for i in combatant_indices),
+            key=lambda genome: genome.fitness
+        )
 
     def crossover(self, parent_0, parent_1):
         CROSSOVER_RATE = 0.95

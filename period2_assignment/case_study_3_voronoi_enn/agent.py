@@ -35,7 +35,7 @@ class Agent():
         return int(np.argmin(distances))
 
     def predict_label(self, point):
-        outputs = self.neural_net.update(point, self.activation_functions)
+        outputs = self.neural_net.update(point)
         return int(np.argmax(outputs)), np.asarray(outputs, dtype=float)
 
     def update(self):
