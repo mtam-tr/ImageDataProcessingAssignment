@@ -123,7 +123,7 @@ class Neural_network():
                 netto_input += self.layers[i].neurons[j].bias
 				
                 # Calculate output
-                outputs[j] = self.calc_activation('id', netto_input)
+                outputs[j] = self.calc_activation('tanh', netto_input)
                 
         return outputs
 	

@@ -1,9 +1,6 @@
 import copy
-import os
 import sys
-
-if '--smoke-test' in sys.argv:
-    os.environ.setdefault('SDL_VIDEODRIVER', 'dummy')
+sys.dont_write_bytecode = True
 
 import pygame as interface
 
@@ -43,11 +40,10 @@ class Main():
                 if event.type == interface.QUIT:
                     self.running = False
 
-            self.update()
-            self.draw()
+            if max_generations is None or self.generation < max_generations:
+                self.update()
 
-            if max_generations is not None and self.generation >= max_generations:
-                self.running = False
+            self.draw()
 
         interface.display.quit()
         if self.best_agent is not None:
@@ -82,4 +78,4 @@ class Main():
 
 print('\014')
 main = Main(Agent.population_size)
-main.run(max_generations=8 if '--smoke-test' in sys.argv else None)
+main.run(max_generations=100)

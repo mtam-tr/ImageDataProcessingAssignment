@@ -1,6 +1,7 @@
 import numpy as np
 from neuralNetwork import Neural_network
-
+import sys
+sys.dont_write_bytecode = True
 
 class Agent():
     caption = 'Case 3 - Voronoi ENN'
