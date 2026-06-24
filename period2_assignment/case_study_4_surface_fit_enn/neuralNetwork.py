@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.special import expit
+from scipy.special import expit
 
 class Neuron():
     def __init__(self, number_of_inputs):

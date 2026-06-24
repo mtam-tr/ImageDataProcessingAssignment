@@ -7,7 +7,7 @@ class Genome():
         self.fitness = 0
         self.weights = weights
         self.biases = biases
-        
+
     def mutate(self):
         MUTATION_RATE = 0.95
         LEARNING_RATE = 0.20
@@ -21,6 +21,7 @@ class Genome():
 	
     def __lt__(self, other_genome):
         return self.fitness < other_genome.fitness
+
 
 class Genetic_algorithm():
     def __init__(self, population_size, number_of_weights, number_of_biases):
@@ -60,13 +61,13 @@ class Genetic_algorithm():
             child.biases[random_bias_index:] = parents[1].biases[random_bias_index:]
             
             return child
-        else:
-           return copy.deepcopy(parents[0])
+
+        return copy.deepcopy(parents[0])
 
     def update(self, agents):
         for i, agent in enumerate(agents):
             self.population[i].fitness = agent.fitness
-    
+
     def upgrade(self):
         self.population[::-1].sort()
         
