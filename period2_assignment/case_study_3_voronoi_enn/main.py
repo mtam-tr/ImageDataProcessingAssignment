@@ -1,9 +1,6 @@
 import copy
-import os
 import sys
-
-if '--smoke-test' in sys.argv:
-    os.environ.setdefault('SDL_VIDEODRIVER', 'dummy')
+sys.dont_write_bytecode = True
 
 import pygame as interface
 
@@ -82,4 +79,4 @@ class Main():
 
 print('\014')
 main = Main(Agent.population_size)
-main.run(max_generations=8 if '--smoke-test' in sys.argv else 100)
+main.run(max_generations=400)

@@ -99,6 +99,7 @@ class Neural_network():
         for i in range(1, self.number_of_layers):
             for j in range(0, self.layers[i].number_of_neurons):
                 self.layers[i].neurons[j].bias = biases[iterator]
+                iterator += 1
    
     def update(self, inputs):        
         # Forward pass: layer by layer, compute weighted sums and activations.

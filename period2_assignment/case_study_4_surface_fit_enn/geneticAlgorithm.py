@@ -1,85 +1,93 @@
 import copy
-import random
 import numpy as np
-
+import random
 
 class Genome():
     def __init__(self, weights, biases):
         self.fitness = 0
         self.weights = weights
         self.biases = biases
-
+        
     def mutate(self):
-        # Small random gene nudges make the next generation explore nearby
-        # neural networks while keeping good solutions recognizable.
-        mutation_rate = 0.18
-        mutation_strength = 0.35
-        for i in range(len(self.weights)):
-            if np.random.random() < mutation_rate:
-                self.weights[i] += np.random.normal(0, mutation_strength)
-
-        for i in range(len(self.biases)):
-            if np.random.random() < mutation_rate:
-                self.biases[i] += np.random.normal(0, mutation_strength)
-
+        MUTATION_RATE = 0.95
+        LEARNING_RATE = 0.20
+        for i in range(0, len(self.weights)):
+            if np.random.random() < MUTATION_RATE:
+                self.weights[i] += np.random.uniform(-1, 1) * LEARNING_RATE       
+        
+        for i in range(0, len(self.biases)):
+            if np.random.random() < MUTATION_RATE:
+                self.biases[i] += np.random.uniform(-1, 1) * LEARNING_RATE    
+	
     def __lt__(self, other_genome):
         return self.fitness < other_genome.fitness
-
 
 class Genetic_algorithm():
     def __init__(self, population_size, number_of_weights, number_of_biases):
         self.population_size = population_size
-        self.population = [None] * population_size
+        self.population = np.full(population_size, None)
         self.number_of_weights = number_of_weights
         self.number_of_biases = number_of_biases
 
         for i in range(population_size):
-            initial_weights = np.random.uniform(-2, 2, number_of_weights).tolist()
-            initial_biases = np.random.uniform(-2, 2, number_of_biases).tolist()
-            self.population[i] = Genome(initial_weights, initial_biases)
-
+            initial_weights = np.random.uniform(-1, 1, number_of_weights)
+            initial_biases = np.random.uniform(-1, 1, number_of_biases)
+            self.population[i] = Genome(initial_weights, initial_biases)            
+   
     def get_genome_by_tournament(self):
-        tournament_size = min(4, len(self.population))
-        combatants = np.random.choice(range(len(self.population)), tournament_size, replace=False)
-        fittest_genome = self.population[combatants[0]]
-        for combatant in combatants[1:]:
-            if self.population[combatant].fitness > fittest_genome.fitness:
-                fittest_genome = self.population[combatant]
+        tournament_size = 4
+        combatants = np.random.choice(range(len(self.population)), tournament_size, replace = False)
+        combatants.sort()
+        fittest_genome = self.population[combatants[0]]   
+
         return fittest_genome
 
     def crossover(self, parent_0, parent_1):
-        crossover_rate = 0.95
-        parents = np.random.choice([parent_0, parent_1], 2, replace=False)
+        CROSSOVER_RATE = 0.95
+        
+        parents = [parent_0, parent_1]        
+        np.random.shuffle(parents)
 
-        if np.random.random() < crossover_rate:
+        if np.random.random() < CROSSOVER_RATE:
             random_weight_index = random.randint(0, self.number_of_weights)
             random_bias_index = random.randint(0, self.number_of_biases)
-            child = Genome([None] * self.number_of_weights, [None] * self.number_of_biases)
+            child = Genome(np.full(self.number_of_weights, None), 
+                           np.full(self.number_of_biases, None))
 
-            child.weights[0:random_weight_index] = parents[0].weights[0:random_weight_index]
+            child.weights[:random_weight_index] = parents[0].weights[:random_weight_index]
             child.weights[random_weight_index:] = parents[1].weights[random_weight_index:]
-            child.biases[0:random_bias_index] = parents[0].biases[0:random_bias_index]
+            child.biases[:random_bias_index] = parents[0].biases[:random_bias_index]
             child.biases[random_bias_index:] = parents[1].biases[random_bias_index:]
+            
             return child
-
-        return copy.deepcopy(parents[0])
+        else:
+           return copy.deepcopy(parents[0])
 
     def update(self, agents):
         for i, agent in enumerate(agents):
             self.population[i].fitness = agent.fitness
-
+    
     def upgrade(self):
-        self.population.sort(reverse=True)
+        self.population[::-1].sort()
+        
+        # Initialize new population with top elites
+        new_population = [self.population[0], self.population[1], self.population[2]]
+        
+        # Generate elite crossovers
+        new_population.extend([
+            self.crossover(self.population[0], self.population[1]),
+            self.crossover(self.population[0], self.population[2]),
+            self.crossover(self.population[1], self.population[2])
+        ])				
 
-        new_population = [None] * self.population_size
-        elite_count = min(4, self.population_size)
-        for i in range(elite_count):
-            new_population[i] = copy.deepcopy(self.population[i])
+        # Fill remaining slots with tournament-selected crossovers
+        for _ in range(len(new_population), self.population_size):
+            parents = (self.get_genome_by_tournament(),
+                       self.get_genome_by_tournament())
+            new_population.append(self.crossover(*parents))
 
-        for i in range(elite_count, self.population_size):
-            parent_0 = self.get_genome_by_tournament()
-            parent_1 = self.get_genome_by_tournament()
-            new_population[i] = self.crossover(parent_0, parent_1)
-            new_population[i].mutate()
-
-        self.population = new_population
+        # Mutate all except the best genome
+        for genome in new_population[1:]:
+            genome.mutate()
+                
+        self.population = np.array(new_population)
