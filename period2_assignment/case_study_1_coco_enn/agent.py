@@ -18,14 +18,13 @@ class Agent():
 
     def __init__(self):
         # Simple network: x/y coordinate in, RGB color out.
-        self.neural_net = Neural_network([2, 3])
-        self.activation_functions = [None, 'sigmoid']
+        self.neural_net = Neural_network([2, 10, 3])
         self.fitness = 0
         self.error = float('inf')
 
     def predict_color(self, x, y):
-        inputs = [x / 15.0, y / 15.0]
-        color = self.neural_net.update(inputs, self.activation_functions)
+        inputs = [x / 15.0, y / 15.0] # normalization to 16x16
+        color = self.neural_net.update(inputs)
         return np.clip(np.array(color), 0.0, 1.0)
 
     def update(self):
@@ -60,7 +59,4 @@ class Agent():
         # Mark the three original training pixels with a black border.
         for (x, y), target_color in Agent.training_pixels:
             rect = interface.Rect(left + x * cell, top + y * cell, cell, cell)
-            interface.draw.rect(screen, (0, 0, 0), rect, 3)
             interface.draw.rect(screen, tuple((255 * target_color).astype(int)), rect.inflate(-10, -10))
-
-        screen.blit(small_font.render('black border = known training pixel', True, (20, 20, 20)), (60, 590))
