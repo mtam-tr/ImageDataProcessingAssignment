@@ -82,4 +82,4 @@ class Main():
 
 print('\014')
 main = Main(Agent.population_size)
-main.run(max_generations=8 if '--smoke-test' in sys.argv else None)
+main.run(max_generations=8 if '--smoke-test' in sys.argv else 100)

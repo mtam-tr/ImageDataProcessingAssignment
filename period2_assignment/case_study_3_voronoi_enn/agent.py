@@ -25,7 +25,6 @@ class Agent():
 
     def __init__(self):
         self.neural_net = Neural_network([2, 14, 5])
-        self.activation_functions = [None, 'tanh', 'id']
         self.fitness = 0
         self.error = float('inf')
         self.accuracy = 0
@@ -36,7 +35,7 @@ class Agent():
         return int(np.argmin(distances))
 
     def predict_label(self, point):
-        outputs = self.neural_net.update(point, self.activation_functions)
+        outputs = self.neural_net.update(point)
         return int(np.argmax(outputs)), np.asarray(outputs, dtype=float)
 
     def update(self):
