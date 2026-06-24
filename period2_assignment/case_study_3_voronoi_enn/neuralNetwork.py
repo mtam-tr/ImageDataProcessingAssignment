@@ -1,5 +1,5 @@
 import numpy as np
-
+from scipy.special import expit
 
 class Neuron():
     def __init__(self, number_of_inputs):
@@ -23,13 +23,13 @@ class Neural_network():
     arctan = lambda x: np.arctan(x)
     id_ = lambda x: x
     id_courb = lambda x: 0.5 * ((x**2 + 1)**0.5 - 1) + x
-    sigmoid = lambda x: 1.0 / (1.0 + np.exp(-np.clip(x, -60, 60)))
+    sigmoid = lambda x: expit(x)
     sin = lambda x: np.sin(x)
     sinc = lambda x: np.sinc(x)
     softmax = lambda x: np.exp(x - np.max(x)) / np.sum(np.exp(x - np.max(x)))
     softplus = lambda x: np.log1p(np.exp(-np.abs(x))) + np.maximum(x, 0)
     softsign = lambda x: x / (1 + np.abs(x))
-    swish = lambda x: x * (1.0 / (1.0 + np.exp(-np.clip(x, -60, 60))))
+    swish = lambda x: x * (expit(x))
     tanh = lambda x: np.tanh(x)
 
     activation_functions_dict = {
