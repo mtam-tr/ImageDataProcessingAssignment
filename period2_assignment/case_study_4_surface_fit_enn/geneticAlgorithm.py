@@ -7,7 +7,7 @@ class Genome():
         self.fitness = 0
         self.weights = weights
         self.biases = biases
-        
+
     def mutate(self):
         MUTATION_RATE = 0.95
         LEARNING_RATE = 0.20
@@ -22,6 +22,7 @@ class Genome():
     def __lt__(self, other_genome):
         return self.fitness < other_genome.fitness
 
+
 class Genetic_algorithm():
     def __init__(self, population_size, number_of_weights, number_of_biases):
         self.population_size = population_size
@@ -32,8 +33,8 @@ class Genetic_algorithm():
         for i in range(population_size):
             initial_weights = np.random.uniform(-1, 1, number_of_weights)
             initial_biases = np.random.uniform(-1, 1, number_of_biases)
-            self.population[i] = Genome(initial_weights, initial_biases)            
-   
+            self.population[i] = Genome(initial_weights, initial_biases)     
+                   
     def get_genome_by_tournament(self):
         tournament_size = 4
         combatant_indices = np.random.choice(
@@ -65,13 +66,13 @@ class Genetic_algorithm():
             child.biases[random_bias_index:] = parents[1].biases[random_bias_index:]
             
             return child
-        else:
-           return copy.deepcopy(parents[0])
+
+        return copy.deepcopy(parents[0])
 
     def update(self, agents):
         for i, agent in enumerate(agents):
             self.population[i].fitness = agent.fitness
-    
+
     def upgrade(self):
         self.population[::-1].sort()
         

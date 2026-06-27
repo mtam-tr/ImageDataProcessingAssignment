@@ -1,6 +1,7 @@
 import numpy as np
 from neuralNetwork import Neural_network
-
+import sys
+sys.dont_write_bytecode = True
 try:
     from mpl_toolkits.mplot3d import Axes3D 
     from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -13,10 +14,9 @@ except Exception:
 
 class Agent():
     caption = 'Case 4 - Quadratic Surface ENN'
-    window_size = (900, 680)
+    window_size = (960, 740)
     frames_per_second = 24
     population_size = 96
-    network_structure = [6, 8, 8, 1]
     points = np.array([
         [-2.0, -1.5, 0.15], [-2.0, -0.5, 1.10], [-2.0, 0.5, 1.00], [-2.0, 1.5, 0.20],
         [-1.5, -1.5, 0.85], [-1.5, -0.5, 1.85], [-1.5, 0.5, 1.80], [-1.5, 1.5, 0.90],
@@ -30,7 +30,7 @@ class Agent():
 
     def __init__(self):
         # The unchanged network uses identity activation in its forward pass.
-        self.neural_net = Neural_network(Agent.network_structure)
+        self.neural_net = Neural_network([6,1])
         self.fitness = 0
         self.error = float('inf')
 
@@ -38,98 +38,8 @@ class Agent():
     def features(x, y):
         return [x**2, y**2, x * y, x, y, 1.0]
 
-    @staticmethod
-    def seed_population(genetic_algorithm, layer_sizes=None):
-        if layer_sizes is None:
-            layer_sizes = Agent.network_structure
-
-        # Start several genomes near a dome shape, then let evolution improve
-        # the parameters. This avoids wasting many generations on impossible
-        # flat surfaces while keeping the final fit evolutionary.
-        base_parameters = np.array([-0.35, -0.40, 0.0, 0.0, 0.0, 2.40])
-        base_output_bias = 0.15
-        base_weights, base_biases = Agent.build_seed_genome(
-            layer_sizes,
-            base_parameters,
-            base_output_bias
-        )
-
-        if (len(base_weights) != genetic_algorithm.number_of_weights or
-                len(base_biases) != genetic_algorithm.number_of_biases):
-            return
-
-        seed_count = min(12, genetic_algorithm.population_size)
-        for i in range(seed_count):
-            weight_noise = np.random.normal(0, 0.08, len(base_weights))
-            bias_noise = np.random.normal(0, 0.05, len(base_biases))
-            genetic_algorithm.population[i].weights = (base_weights + weight_noise).tolist()
-            genetic_algorithm.population[i].biases = (base_biases + bias_noise).tolist()
-
-    @staticmethod
-    def build_seed_genome(layer_sizes, base_parameters, base_output_bias):
-        weights = []
-        biases = []
-
-        for layer_index in range(1, len(layer_sizes)):
-            input_count = layer_sizes[layer_index - 1]
-            neuron_count = layer_sizes[layer_index]
-            layer_weights = np.zeros((neuron_count, input_count))
-            layer_biases = np.zeros(neuron_count)
-
-            if layer_index == 1:
-                parameter_count = min(input_count, len(base_parameters))
-                layer_weights[0, :parameter_count] = base_parameters[:parameter_count]
-                layer_biases[0] = base_output_bias
-            else:
-                layer_weights[0, 0] = 1.0
-
-            weights.extend(layer_weights.reshape(-1))
-            biases.extend(layer_biases)
-
-        return np.asarray(weights), np.asarray(biases)
-
     def predict_z(self, x, y):
         return float(self.neural_net.update(Agent.features(x, y))[0])
-
-    def parameters(self):
-        transform, offset = self.effective_affine_map()
-        coefficients = np.zeros(6)
-        coefficient_count = min(len(coefficients), transform.shape[1])
-        coefficients[:coefficient_count] = transform[0, :coefficient_count]
-        constant = coefficients[5] + offset[0]
-        return tuple(float(value) for value in (
-            coefficients[0],
-            coefficients[1],
-            coefficients[2],
-            coefficients[3],
-            coefficients[4],
-            constant
-        ))
-
-    def effective_affine_map(self):
-        weights = np.asarray(self.neural_net.get_weights(), dtype=float)
-        biases = np.asarray(self.neural_net.get_biases(), dtype=float)
-        layer_sizes = self.neural_net.layer_sizes
-
-        transform = np.eye(layer_sizes[0])
-        offset = np.zeros(layer_sizes[0])
-        weight_index = 0
-        bias_index = 0
-
-        for layer_index in range(1, len(layer_sizes)):
-            input_count = layer_sizes[layer_index - 1]
-            neuron_count = layer_sizes[layer_index]
-            weight_count = input_count * neuron_count
-            layer_weights = weights[weight_index:weight_index + weight_count].reshape(neuron_count, input_count)
-            layer_biases = biases[bias_index:bias_index + neuron_count]
-
-            transform = layer_weights @ transform
-            offset = layer_weights @ offset + layer_biases
-
-            weight_index += weight_count
-            bias_index += neuron_count
-
-        return transform, offset
 
     def update(self):
         # Fitness is the inverse of the mean squared fitting error over the
@@ -154,8 +64,8 @@ class Agent():
         canvas = FigureCanvasAgg(figure)
         axis = figure.add_subplot(111, projection='3d')
 
-        xs = np.linspace(-2.0, 2.0, 35)
-        ys = np.linspace(-1.5, 1.5, 35)
+        xs = np.linspace(-2.0, 2.0, 80)
+        ys = np.linspace(-1.5, 1.5, 80)
         x_grid, y_grid = np.meshgrid(xs, ys)
         z_grid = np.vectorize(self.predict_z)(x_grid, y_grid)
 
@@ -164,11 +74,11 @@ class Agent():
             y_grid,
             z_grid,
             color='#b8b46a',
-            edgecolor='#807d46',
-            linewidth=0.25,
-            alpha=0.62,
-            antialiased=True,
-            shade=True
+            edgecolor='none',
+            linewidth=0,
+            alpha=0.6,
+            antialiased=False,
+            shade=False
         )
         axis.scatter(
             Agent.points[:, 0],
@@ -181,9 +91,12 @@ class Agent():
             depthshade=True
         )
 
-        axis.set_xlim(-2.2, 2.2)
-        axis.set_ylim(-1.7, 1.7)
-        axis.set_zlim(-0.2, 3.3)
+        x_limits = (-2.15, 2.15)
+        y_limits = (-1.65, 1.65)
+        z_limits = (-0.2, 3.35)
+        axis.set_xlim(*x_limits)
+        axis.set_ylim(*y_limits)
+        axis.set_zlim(*z_limits)
         axis.set_xlabel('x', labelpad=8)
         axis.set_ylabel('y', labelpad=8)
         axis.set_zlabel('z', labelpad=8)
@@ -191,7 +104,12 @@ class Agent():
         axis.set_yticks(np.arange(-1.5, 1.6, 0.5))
         axis.set_zticks(np.arange(0.0, 3.1, 0.5))
         axis.view_init(elev=24, azim=-62)
-        axis.set_box_aspect((4.4, 3.4, 3.5))
+        axis.set_box_aspect((
+            x_limits[1] - x_limits[0],
+            y_limits[1] - y_limits[0],
+            z_limits[1] - z_limits[0]
+        ))
+        axis.grid(True)
 
         for plot_axis in (axis.xaxis, axis.yaxis, axis.zaxis):
             plot_axis.pane.set_facecolor((1.0, 1.0, 1.0, 1.0))
@@ -199,7 +117,7 @@ class Agent():
             plot_axis._axinfo['grid']['color'] = (0.80, 0.80, 0.80, 1.0)
             plot_axis._axinfo['grid']['linewidth'] = 1.0
 
-        figure.subplots_adjust(left=-0.04, right=1.02, bottom=-0.06, top=0.96)
+        figure.subplots_adjust(left=0.02, right=0.94, bottom=0.08, top=0.94)
         figure.text(
             0.03,
             0.965,

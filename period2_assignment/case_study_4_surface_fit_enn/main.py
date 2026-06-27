@@ -25,7 +25,7 @@ class Main():
         self.genetic_algorithm = Genetic_algorithm(number_of_agents, number_of_weights, number_of_biases)
 
         if hasattr(Agent, 'seed_population'):
-            Agent.seed_population(self.genetic_algorithm, self.agents[0].neural_net.layer_sizes)
+            Agent.seed_population(self.genetic_algorithm)
 
         self.apply_genomes_to_agents()
 
@@ -40,10 +40,11 @@ class Main():
                 if event.type == interface.QUIT:
                     self.running = False
 
-            if max_generations is None or self.generation < max_generations:
-                self.update()
-
+            self.update()
             self.draw()
+
+            if max_generations is not None and self.generation >= max_generations:
+                self.running = False
 
         interface.display.quit()
         if self.best_agent is not None:
