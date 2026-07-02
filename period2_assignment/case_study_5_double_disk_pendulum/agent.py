@@ -1,15 +1,10 @@
 import numpy as np
 import pymunk
 from neuralNetwork import Neural_network
-
+import sys
+sys.dont_write_bytecode = True
 
 class Agent():
-    """Double-disk version of the provided inverted-pendulum ENN agent.
-
-    The original example balances one pole/bob on a cart. This case keeps the
-    same PyMunk cart, ENN controller, genetic fitness, disturbance, and drawing
-    structure, but replaces the pole/bob with two hinged disks.
-    """
     caption = 'Case 5 - Double Disk Pendulum ENN'
     window_size = (900, 700)
     frames_per_second = 60
@@ -28,14 +23,10 @@ class Agent():
     category_disk = 0b0010
     mask_none = 0b0000
 
-    # Convenience function from the example: convert PyMunk's positive-y-up
-    # coordinates to Pygame's positive-y-down screen coordinates.
     @staticmethod
     def x2x_y2miny(v, interface):
         return v.x, interface.display.get_window_size()[1] - v.y
 
-    # Draw PyMunk shapes with Pygame, extended from the example to show disk
-    # rotation using a black radial line.
     @staticmethod
     def draw_shapes(shapes, interface, screen):
         for shape in shapes:
@@ -58,15 +49,6 @@ class Agent():
                 p1 = Agent.x2x_y2miny(v + shape.a.cpvrotate(rotation_vector), interface)
                 p2 = Agent.x2x_y2miny(v + shape.b.cpvrotate(rotation_vector), interface)
                 interface.draw.line(screen, shape.color, p1, p2, int(2 * shape.radius))
-
-    # Keep the collision-labeling hook from the example. The case 5 shapes are
-    # filtered not to collide, but labeling still documents the shared scaffold.
-    @staticmethod
-    def collision_callback(arbiter, world, data):
-        collision_indices = []
-        for shape in arbiter.shapes:
-            collision_indices.append(shape.pair_index)
-        return len(np.unique(collision_indices)) == 1
 
     def __init__(self, position_of_agent=None, world=None):
         Agent.counter += 1
@@ -96,7 +78,6 @@ class Agent():
         self.angle_threshold = np.radians(28)
         self.position_threshold = 0.5 * Agent.width_plateau - 35
 
-        # Controller network, expanded from the example's [4, 8, 1].
         # Controller inputs:
         # lower angle, lower angular velocity, upper relative angle,
         # upper angular velocity, cart position, cart velocity.
@@ -156,8 +137,6 @@ class Agent():
         return pymunk.Vec2d(*world_anchor) - pymunk.Vec2d(*local_anchor).rotated(angle)
 
     def create_agent(self):
-        # Cart: same horizontal moving base as the example, constrained to slide
-        # along the plateau by a groove joint.
         body_cart = pymunk.Body()
         body_cart.position = (self.position_of_agent[0], self.position_of_agent[1] + 0.5 * self.height_cart)
         shape_cart = pymunk.Poly.create_box(body_cart, (self.width_cart, self.height_cart))
@@ -177,8 +156,6 @@ class Agent():
         lower_angle = np.radians(4)
         upper_angle = np.radians(-3)
 
-        # Lower disk: replaces the example's pole. It is hinged to the cart and
-        # starts slightly off vertical so the controller must react.
         body_lower = pymunk.Body()
         body_lower.angle = lower_angle
         body_lower.position = self.body_position_from_anchor(cart_top, (0, -self.radius_disk), lower_angle)
@@ -189,8 +166,6 @@ class Agent():
         joint_lower = pymunk.PivotJoint(body_lower, body_cart, (0, -self.radius_disk), (0, 0.5 * self.height_cart))
 
         lower_top_world = body_lower.local_to_world((0, self.radius_disk))
-        # Upper disk: replaces the example's bob, but remains free to rotate as
-        # a second inverted-pendulum link instead of being locked to a pole.
         body_upper = pymunk.Body()
         body_upper.angle = upper_angle
         body_upper.position = self.body_position_from_anchor(lower_top_world, (0, -self.radius_disk), upper_angle)
@@ -213,13 +188,6 @@ class Agent():
 
         self.shapes = [shape_cart, rod_lower, shape_lower, rod_upper, shape_upper]
         self.joints = [groove_joint_cart, joint_lower, joint_upper]
-
-        # Same collision labeling pattern as the example. It keeps each agent's
-        # shapes identifiable when several candidates share one world.
-        for shape in self.shapes:
-            shape.pair_index = self.id
-            shape.collision_type = 1
-
         self.capture_snapshot()
 
     def destroy(self):
@@ -258,13 +226,10 @@ class Agent():
             impulse = sign_force * np.random.uniform(1.4 * self.max_force, 2.2 * self.max_force)
             upper_disk = self.shapes[-1]
             upper_disk.body.apply_impulse_at_local_point((impulse, 0), (0, 0))
-            upper_disk.color = (255, 40, 30, 255)
+            upper_disk.color = (255, 255, 255, 255)
             self.time_no_disturb = Agent.time_no_disturb
 
     def update(self):
-        # Existing case-study main calls Agent() without a shared world, so one
-        # full episode is evaluated off-screen. If a shared world is supplied,
-        # this behaves like the original example and advances one live step.
         if self.owns_world:
             self.evaluate_episode()
             return not self.is_alive
@@ -299,8 +264,6 @@ class Agent():
         cart_x = shape_cart.body.position.x - self.position_of_agent[0]
         cart_x_dot = shape_cart.body.velocity.x
 
-        # The agent dies if either disk falls too far or the cart leaves the
-        # allowed platform range.
         if (
             abs(lower_angle) > self.angle_threshold
             or abs(relative_upper_angle) > self.angle_threshold
@@ -311,7 +274,6 @@ class Agent():
             self.destroy()
             return True
 
-        # Normalize the physical state before feeding it to the neural network.
         self.inputs[0] = lower_angle / self.angle_threshold
         self.inputs[1] = lower_speed / 8.0
         self.inputs[2] = relative_upper_angle / self.angle_threshold
@@ -319,8 +281,6 @@ class Agent():
         self.inputs[4] = cart_x / self.position_threshold
         self.inputs[5] = cart_x_dot / 260.0
 
-        # Convert the network output into the left/right cart impulse, following
-        # the example's force-control idea.
         output = self.neural_net.update(self.inputs)[0]
         force = (2.0 * output - 1.0) * self.max_force
         shape_cart.body.apply_impulse_at_local_point((force, 0), (0, 0))
@@ -329,7 +289,8 @@ class Agent():
         balance_penalty = 0.25 * abs(lower_angle) + 0.25 * abs(relative_upper_angle) + 0.001 * abs(cart_x)
         self.fitness += max(0.0, 1.0 - balance_penalty)
 
-        shape_upper.color = (255, 40, 30, 255)
+        fraction = self.time_no_disturb / Agent.time_no_disturb
+        shape_upper.color = (255, int(40 + 215 * (1 - fraction)), int(30 + 225 * (1 - fraction)), 255)
         self.disturb(cart_x, cart_x_dot)
         return False
 
