@@ -26,7 +26,7 @@ class Agent():
         [1.0, -1.5, 1.38], [1.0, -0.5, 2.42], [1.0, 0.5, 2.36], [1.0, 1.5, 1.44],
         [1.5, -1.5, 0.92], [1.5, -0.5, 1.92], [1.5, 0.5, 1.88], [1.5, 1.5, 0.98],
         [2.0, -1.5, 0.22], [2.0, -0.5, 1.18], [2.0, 0.5, 1.08], [2.0, 1.5, 0.28],
-    ])
+    ]) # GRID OF POINTS
 
     def __init__(self):
         # The unchanged network uses identity activation in its forward pass.
@@ -35,7 +35,7 @@ class Agent():
         self.error = float('inf')
 
     @staticmethod
-    def features(x, y):
+    def features(x, y): # TURN 2 INPUTS INTO 6 FEATURES
         return [x**2, y**2, x * y, x, y, 1.0]
 
     def predict_z(self, x, y):
@@ -67,7 +67,7 @@ class Agent():
         xs = np.linspace(-2.0, 2.0, 80)
         ys = np.linspace(-1.5, 1.5, 80)
         x_grid, y_grid = np.meshgrid(xs, ys)
-        z_grid = np.vectorize(self.predict_z)(x_grid, y_grid)
+        z_grid = np.vectorize(self.predict_z)(x_grid, y_grid) 
 
         axis.plot_surface(
             x_grid,
