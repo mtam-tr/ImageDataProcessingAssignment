@@ -5,11 +5,10 @@ sys.dont_write_bytecode = True
 
 class Agent():
     caption = 'Case 1 - CoCo ENN'
-    window_size = (600, 620)
+    window_size = (600, 600)
     frames_per_second = 30
     population_size = 40
 
-    
     training_pixels = [
         ((2, 2), np.array([0.0, 0.0, 1.0])),    # blue
         ((2, 13), np.array([0.0, 1.0, 0.0])),   # green
@@ -46,15 +45,22 @@ class Agent():
         screen.blit(small_font.render(f'generation: {generation}', True, (20, 20, 20)), (36, 56))
         screen.blit(small_font.render(f'training MSE: {self.error:.6f}', True, (20, 20, 20)), (220, 56))
 
-        left = 60
-        top = 96
-        cell = 30
+        left = 60 #left margin
+        top = 96 #top margin
+        cell = 30 #cell size
 
-        for y in range(16):
-            for x in range(16):
-                color = tuple((255 * self.predict_color(x, y)).astype(int))
-                rect = interface.Rect(left + x * cell, top + y * cell, cell, cell)
-                interface.draw.rect(screen, color, rect)
+        # Build the 16x16 image as RGB pixel data first.
+        pixels = np.zeros((16, 16, 3), dtype=np.uint8)
+        for x in range(16):
+            for y in range(16):
+                # Neural network outputs can fall outside 0..1, so clamp them
+                # before converting to the 0..255 RGB range.
+                pixels[x, y] = np.clip(self.predict_color(x, y), 0.0, 1.0) * 255
+
+        # Convert to pygame surface
+        image = interface.surfarray.make_surface(pixels)
+        image = interface.transform.scale(image, (16 * cell, 16 * cell))
+        screen.blit(image, (left, top))
 
         # mark the known training pixels
         for (x, y), target_color in Agent.training_pixels:
