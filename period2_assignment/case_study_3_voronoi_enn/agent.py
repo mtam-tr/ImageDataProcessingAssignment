@@ -5,7 +5,7 @@ sys.dont_write_bytecode = True
 
 class Agent():
     caption = 'Case 3 - Voronoi ENN'
-    window_size = (960, 740)
+    window_size = (800, 700)
     frames_per_second = 18
     population_size = 40
     # fixed points that define the voronoi regions
