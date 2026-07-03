@@ -7,7 +7,7 @@ sys.dont_write_bytecode = True
 
 class Agent():
     caption = 'Case 2 - ODE ENN'
-    window_size = (820, 620)
+    window_size = (960, 740)
     frames_per_second = 30
     population_size = 96
     domain = np.linspace(1.0, 1.5, 45) # input points
