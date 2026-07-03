@@ -78,4 +78,4 @@ class Main():
 
 print('\014')
 main = Main(Agent.population_size)
-main.run(max_generations=400)
+main.run(max_generations=200)
