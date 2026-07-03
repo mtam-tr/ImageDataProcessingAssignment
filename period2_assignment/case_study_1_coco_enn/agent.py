@@ -18,7 +18,7 @@ class Agent():
     ]
 
     def __init__(self):
-        # Simple network: x/y coordinate in, RGB color out.
+        # x/y coordinate in, RGB color out.
         self.neural_net = Neural_network([2, 10, 3])
         self.fitness = 0
         self.error = float('inf')

@@ -1,4 +1,6 @@
 import numpy as np
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.figure import Figure
 from neuralNetwork import Neural_network
 import sys
 sys.dont_write_bytecode = True
@@ -15,6 +17,8 @@ class Agent():
         self.fitness = 0
         self.error = float('inf')
         self.curve_error = float('inf')
+        self._plot_cache_key = None
+        self._plot_cache_surface = None
 
     @staticmethod
     def exact_solution(x):
@@ -46,61 +50,59 @@ class Agent():
         self.curve_error = float(np.mean(curve_errors))
         self.fitness = 1.0 / (1.0 + 20.0 * self.error + 2.0 * self.curve_error)
 
-    def draw_curve(self, interface, screen, points, color, width=3):
-        if len(points) > 1:
-            interface.draw.lines(screen, color, False, points, width)
-
     def draw(self, interface, screen, generation):
-        font = interface.font.SysFont('Consolas', 22)
-        small_font = interface.font.SysFont('Consolas', 16)
-        screen.blit(font.render('ENN approximation of the initial value problem', True, (20, 20, 20)), (32, 24))
-        screen.blit(small_font.render('x y\' + 2y = x^2 - x + 1,   y(1)=1/2', True, (20, 20, 20)), (36, 56))
-        screen.blit(small_font.render(f'generation: {generation}', True, (20, 20, 20)), (36, 84))
-        screen.blit(small_font.render(f'residual MSE: {self.error:.8f}', True, (20, 20, 20)), (220, 84))
+        width, height = screen.get_size()
+        cache_key = (width, height, generation, round(self.error, 12), round(self.curve_error, 12))
+        if self._plot_cache_key == cache_key and self._plot_cache_surface is not None:
+            screen.blit(self._plot_cache_surface, (0, 0))
+            return
 
-        plot_left, plot_top, plot_w, plot_h = 86, 126, 680, 420
         x_min, x_max = 1.0, 1.5
         y_min, y_max = 0.49, 0.61
-        x_ticks = np.linspace(x_min, x_max, 6)
-        y_ticks = np.arange(0.50, 0.601, 0.02)
-
-        def project(x, y):
-            px = plot_left + (x - x_min) / (x_max - x_min) * plot_w
-            py = plot_top + plot_h - (y - y_min) / (y_max - y_min) * plot_h
-            return int(px), int(py)
-
-        plot_rect = interface.Rect(plot_left, plot_top, plot_w, plot_h)
-        interface.draw.rect(screen, (255, 255, 255), plot_rect)
-        for x in x_ticks:
-            px, _ = project(x, y_min)
-            interface.draw.line(screen, (205, 205, 205), (px, plot_top), (px, plot_top + plot_h), 1)
-            label = small_font.render(f'{x:.1f}', True, (70, 70, 70))
-            screen.blit(label, (px - label.get_width() // 2, plot_top + plot_h + 8))
-        for y in y_ticks:
-            _, py = project(x_min, y)
-            interface.draw.line(screen, (205, 205, 205), (plot_left, py), (plot_left + plot_w, py), 1)
-            label = small_font.render(f'{y:.2f}', True, (70, 70, 70))
-            screen.blit(label, (plot_left - label.get_width() - 8, py - label.get_height() // 2))
-
-        interface.draw.rect(screen, (90, 90, 90), plot_rect, 2)
-        x_label = small_font.render('x', True, (40, 40, 40))
-        screen.blit(x_label, (plot_left + plot_w // 2 - x_label.get_width() // 2, plot_top + plot_h + 34))
-        y_label = interface.transform.rotate(small_font.render('y', True, (40, 40, 40)), 90)
-        screen.blit(y_label, (plot_left - 56, plot_top + plot_h // 2 - y_label.get_height() // 2))
-
         xs = np.linspace(x_min, x_max, 120)
-        exact_points = [project(x, Agent.exact_solution(x)) for x in xs]
-        enn_points = [project(x, self.trial_solution(x)) for x in xs]
+        exact_ys = [Agent.exact_solution(x) for x in xs]
+        enn_ys = [self.trial_solution(x) for x in xs]
+        sample_xs = Agent.domain[::3]
+        sample_ys = [self.trial_solution(x) for x in sample_xs]
 
-        previous_clip = screen.get_clip()
-        screen.set_clip(plot_rect)
-        self.draw_curve(interface, screen, exact_points, (25, 80, 230), 2)
-        self.draw_curve(interface, screen, enn_points, (230, 35, 25), 2)
-        for x in Agent.domain[::3]:
-            interface.draw.circle(screen, (230, 35, 25), project(x, self.trial_solution(x)), 4)
-        screen.set_clip(previous_clip)
+        figure = Figure(figsize=(width / 100, height / 100), dpi=100)
+        figure.patch.set_facecolor('white')
+        canvas = FigureCanvasAgg(figure)
+        axis = figure.add_subplot(111)
 
-        equation = small_font.render('x dy/dx + 2y(x) = x^2 - x + 1', True, (35, 35, 35))
-        screen.blit(equation, (plot_left + 85, plot_top + 120))
-        screen.blit(small_font.render('blue: exact solution', True, (25, 80, 230)), (plot_left, plot_top + plot_h + 58))
-        screen.blit(small_font.render('red: ENN approximation', True, (230, 35, 25)), (plot_left + 240, plot_top + plot_h + 58))
+        axis.plot(xs, exact_ys, color='#1950e6', linewidth=2.0, label='exact solution')
+        axis.plot(xs, enn_ys, color='#e62319', linewidth=2.0, label='ENN approximation')
+        axis.scatter(sample_xs, sample_ys, s=22, color='#e62319', zorder=3)
+
+        axis.set_xlim(x_min, x_max)
+        axis.set_ylim(y_min, y_max)
+        axis.set_xlabel('x')
+        axis.set_ylabel('y')
+        axis.set_xticks(np.linspace(x_min, x_max, 6))
+        axis.set_yticks(np.arange(0.50, 0.601, 0.02))
+        axis.grid(True, color='#d4d4d4', linewidth=0.8)
+        axis.set_title(r'$x\,dy/dx + 2y(x) = x^2 - x + 1$', pad=10)
+        axis.legend(loc='lower left', bbox_to_anchor=(0.0, -0.28), ncol=2, frameon=False)
+
+        for spine in axis.spines.values():
+            spine.set_color('#5a5a5a')
+            spine.set_linewidth(1.0)
+
+        figure.subplots_adjust(left=0.12, right=0.96, bottom=0.23, top=0.82)
+        figure.text(
+            0.04,
+            0.955,
+            f'generation: {generation}    residual MSE: {self.error:.8f}',
+            ha='left',
+            va='top',
+            fontsize=10,
+            family='monospace',
+            color='black'
+        )
+
+        canvas.draw()
+        size = canvas.get_width_height()
+        image = interface.image.frombuffer(canvas.buffer_rgba().tobytes(), size, 'RGBA').copy()
+        self._plot_cache_key = cache_key
+        self._plot_cache_surface = image
+        screen.blit(image, (0, 0))
