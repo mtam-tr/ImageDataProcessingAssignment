@@ -10,9 +10,10 @@ class Agent():
     window_size = (820, 620)
     frames_per_second = 30
     population_size = 96
-    domain = np.linspace(1.0, 1.5, 45)
+    domain = np.linspace(1.0, 1.5, 45) # input points
 
     def __init__(self):
+        # one x value in, one y value out
         self.neural_net = Neural_network([1, 10, 1])
         self.fitness = 0
         self.error = float('inf')
@@ -21,23 +22,22 @@ class Agent():
         self._plot_cache_surface = None
 
     @staticmethod
-    def exact_solution(x):
+    def exact_solution(x): 
         return x**2 / 4.0 - x / 3.0 + 0.5 + 1.0 / (12.0 * x**2)
 
-    def network_value(self, x):
+    def network_value(self, x): # give x to the neural network
         return self.neural_net.update([x])[0]
 
     def trial_solution(self, x):
-        # The trial form automatically satisfies y(1)=1/2 for any network.
+        # force the boundary condition y(1)=0.5
         return 0.5 + (x - 1.0) * self.network_value(x)
 
-    def derivative(self, x):
+    def derivative(self, x):  # Estimate dy/dx numerically
         h = 1e-3
         return (self.trial_solution(x + h) - self.trial_solution(x - h)) / (2.0 * h)
 
     def update(self):
-        # Fitness measures the differential-equation residual. The exact curve
-        # is used only as a small stabilizer and for the required visualization.
+        # measure the performance
         residuals = []
         curve_errors = []
         for x in Agent.domain:
@@ -48,6 +48,7 @@ class Agent():
 
         self.error = float(np.mean(residuals))
         self.curve_error = float(np.mean(curve_errors))
+        # convert errors into a fitness score
         self.fitness = 1.0 / (1.0 + 20.0 * self.error + 2.0 * self.curve_error)
 
     def draw(self, interface, screen, generation):

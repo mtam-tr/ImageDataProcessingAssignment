@@ -1,8 +1,11 @@
+import sys
+sys.dont_write_bytecode = True
 import pygame as interface
 import pymunk
 import pymunk.pygame_util
 from agent import Agent
 from geneticAlgorithm import Genetic_algorithm 
+
 
 class Main():
     interface.init()

@@ -8,6 +8,7 @@ class Agent():
     window_size = (760, 650)
     frames_per_second = 18
     population_size = 40
+    # fixed points that define the voronoi regions
     centroids = np.array([
         [0.18, 0.82],
         [0.22, 0.28],
@@ -22,9 +23,11 @@ class Agent():
         (245, 235, 0),
         (135, 0, 235),
     ]
+    # grid points used for training.
     training_points = np.array([[x, y] for y in np.linspace(0, 1, 20) for x in np.linspace(0, 1, 20)])
 
     def __init__(self):
+        # x/y coordinates in, one score for each centroid out.
         self.neural_net = Neural_network([2, 5, 5])
         self.fitness = 0
         self.error = float('inf')
@@ -32,14 +35,17 @@ class Agent():
 
     @staticmethod
     def nearest_centroid(point):
+        # find the closest centroid for this point.
         distances = np.sum((Agent.centroids - point) ** 2, axis=1)
         return int(np.argmin(distances))
 
     def predict_label(self, point):
+        # choose the centroid with the highest network output.
         outputs = self.neural_net.update(point)
         return int(np.argmax(outputs)), np.asarray(outputs, dtype=float)
 
     def update(self):
+        # measure how well the network predicts the voronoi regions.
         correct = 0
         total_error = 0.0
 
@@ -49,6 +55,7 @@ class Agent():
 
             correct += int(predicted_label == target_label)
 
+            # reward a higher score for the correct centroid.
             target_score = outputs[target_label]
             wrong_scores = np.delete(outputs, target_label)
             best_wrong_score = np.max(wrong_scores)
@@ -58,6 +65,7 @@ class Agent():
 
         self.accuracy = correct / len(Agent.training_points)
         self.error = total_error / len(Agent.training_points)
+        # convert accuracy and error into a fitness score.
         self.fitness = self.accuracy + 1.0 / (1.0 + self.error)
 
     def draw(self, interface, screen, generation):
@@ -71,6 +79,7 @@ class Agent():
         left, top, size = 82, 96, 500
         pixels = 50
         cell = size // pixels
+        # draw the learned voronoi regions.
         for py in range(pixels):
             y = 1.0 - py / (pixels - 1)
             for px in range(pixels):
@@ -80,6 +89,7 @@ class Agent():
                 interface.draw.rect(screen, Agent.colors[label], rect)
 
         interface.draw.rect(screen, (20, 20, 20), (left, top, size, size), 2)
+        # draw the centroid locations.
         for centroid in Agent.centroids:
             cx = int(left + centroid[0] * size)
             cy = int(top + (1.0 - centroid[1]) * size)

@@ -13,6 +13,7 @@ class Agent:
     window_size = (960, 740)
     frames_per_second = 24
     population_size = 96
+    # 3d points used for training.
     points = np.array([
         [-2.0, -1.5, 0.15], [-2.0, -0.5, 1.10], [-2.0, 0.5, 1.00], [-2.0, 1.5, 0.20],
         [-1.5, -1.5, 0.85], [-1.5, -0.5, 1.85], [-1.5, 0.5, 1.80], [-1.5, 1.5, 0.90],
@@ -22,26 +23,28 @@ class Agent:
         [1.0, -1.5, 1.38], [1.0, -0.5, 2.42], [1.0, 0.5, 2.36], [1.0, 1.5, 1.44],
         [1.5, -1.5, 0.92], [1.5, -0.5, 1.92], [1.5, 0.5, 1.88], [1.5, 1.5, 0.98],
         [2.0, -1.5, 0.22], [2.0, -0.5, 1.18], [2.0, 0.5, 1.08], [2.0, 1.5, 0.28],
-    ]) # GRID OF POINTS
+    ])
 
     def __init__(self):
-        # The unchanged network uses identity activation in its forward pass.
+        # six surface features in, z value out.
         self.neural_net = Neural_network([6, 1])
         self.fitness = 0
         self.error = float('inf')
 
     @staticmethod
-    def features(x, y): # TURN 2 INPUTS INTO 6 FEATURES
+    def features(x, y):
+        # turn x and y into quadratic surface features (6 features)
         return [x**2, y**2, x * y, x, y, 1.0]
 
     def predict_z(self, x, y):
+        # predict the z value for one coordinate.
         return float(self.neural_net.update(Agent.features(x, y))[0])
 
     def update(self):
-        # Fitness is the inverse of the mean squared fitting error over the
-        # provided 32 measured 3D points.
+        # measure how well the network fits the measured points.
         errors = [(self.predict_z(x, y) - z) ** 2 for x, y, z in Agent.points]
         self.error = float(np.mean(errors))
+        # convert errors into a fitness score.
         self.fitness = 1.0 / (1.0 + 25.0 * self.error)
 
     def draw(self, interface, screen, generation):
@@ -50,11 +53,13 @@ class Agent:
         canvas = FigureCanvasAgg(figure)
         axis = figure.add_subplot(111, projection='3d')
 
+        # sample the learned surface.
         xs = np.linspace(-2.0, 2.0, 80)
         ys = np.linspace(-1.5, 1.5, 80)
         x_grid, y_grid = np.meshgrid(xs, ys)
         z_grid = np.vectorize(self.predict_z)(x_grid, y_grid) 
 
+        # draw the fitted surface and measured points.
         axis.plot_surface(x_grid, y_grid, z_grid, color='#b8b46a', alpha=0.6)
         axis.scatter(
             Agent.points[:, 0],

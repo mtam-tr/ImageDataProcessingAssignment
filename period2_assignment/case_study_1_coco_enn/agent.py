@@ -9,8 +9,7 @@ class Agent():
     frames_per_second = 30
     population_size = 40
 
-    # The assignment gives only three known pixels. The ENN learns from these
-    # examples and predicts the colors of the remaining 16x16 pixels.
+    
     training_pixels = [
         ((2, 2), np.array([0.0, 0.0, 1.0])),    # blue
         ((2, 13), np.array([0.0, 1.0, 0.0])),   # green
@@ -18,24 +17,25 @@ class Agent():
     ]
 
     def __init__(self):
-        # x/y coordinate in, RGB color out.
+        # x/y coordinates in, RGB color out
         self.neural_net = Neural_network([2, 10, 3])
         self.fitness = 0
         self.error = float('inf')
 
     def predict_color(self, x, y):
-        inputs = [x / 15.0, y / 15.0] # normalization to 16x16
+        inputs = [x / 15.0, y / 15.0] # normalize to the 16x16 grid
         color = self.neural_net.update(inputs)
-        return np.array(color)
+        return np.array(color) 
 
     def update(self):
-        # Fitness is higher when the three known pixels are predicted correctly.
+        # measure performance
         total_error = 0.0
         for (x, y), target_color in Agent.training_pixels:
             predicted_color = self.predict_color(x, y)
             total_error += np.mean((predicted_color - target_color) ** 2)
 
         self.error = total_error / len(Agent.training_pixels)
+        # convert errors into a fitness score
         self.fitness = 1.0 / (1.0 + 10.0 * self.error)
 
     def draw(self, interface, screen, generation):
@@ -56,7 +56,7 @@ class Agent():
                 rect = interface.Rect(left + x * cell, top + y * cell, cell, cell)
                 interface.draw.rect(screen, color, rect)
 
-        # Mark the three original training pixels with a black border.
+        # mark the known training pixels
         for (x, y), target_color in Agent.training_pixels:
             rect = interface.Rect(left + x * cell, top + y * cell, cell, cell)
             interface.draw.rect(screen, tuple((255 * target_color).astype(int)), rect.inflate(-10, -10))
