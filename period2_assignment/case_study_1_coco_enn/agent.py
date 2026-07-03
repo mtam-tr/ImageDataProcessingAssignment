@@ -5,7 +5,7 @@ sys.dont_write_bytecode = True
 
 class Agent():
     caption = 'Case 1 - CoCo ENN'
-    window_size = (600, 620)
+    window_size = (960, 740)
     frames_per_second = 30
     population_size = 40
 
